@@ -98,7 +98,7 @@ const HomeScreen = ({ navigation }) => {
           <View>
             <Text style={styles.name}>{userData.nama}</Text>
             <Text>NIM : {userData.nim_mhs}</Text>
-            <Text>Class : Informatika-2B</Text>
+            <Text>Class : Informatika-2A</Text>
           </View>
         </View>
 
