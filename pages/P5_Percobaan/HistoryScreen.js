@@ -41,7 +41,6 @@ export default function HistoryScreen({ navigation }) {
             setPage(targetPage);
             setIsLastPage(json.last);
         } catch (error) {
-            console.error("Gagal tarik data:", error);
         } finally {
             setIsLoading(false);
             setIsRefreshing(false);

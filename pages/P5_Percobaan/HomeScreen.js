@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useContext } from 'react';
 import {
   View, Text, StyleSheet,
-  TouchableOpacity, ScrollView, Alert, TextInput, ActivityIndicator
+  TouchableOpacity, ScrollView, Alert, TextInput, ActivityIndicator, Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -10,7 +10,7 @@ import { AuthContext } from './AuthContext';
 
 const HomeScreen = ({ navigation }) => {
 
-  const { userData } = useContext(AuthContext);
+  const { userData, logout } = useContext(AuthContext);
 
   const [isCheckedIn, setIsCheckedIn] = useState(false);
   const [currentTime, setCurrentTime] = useState('Memuat jam...');
@@ -77,9 +77,33 @@ const HomeScreen = ({ navigation }) => {
       }
     } catch (error) {
       Alert.alert("Error Jaringan", "Pastikan IP Laptop benar dan Spring Boot berjalan.");
-      console.error(error);
     } finally {
       setIsPosting(false);
+    }
+  };
+
+  const handleLogout = () => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.confirm) {
+      const confirmed = window.confirm("Apakah Anda yakin ingin keluar?");
+      
+      if (confirmed) {
+        logout();
+      }
+    } else {
+      Alert.alert(
+        "Konfirmasi Logout",
+        "Apakah Anda yakin ingin keluar?",
+        [
+          { text: "Batal", style: "cancel" },
+          {
+            text: "Logout",
+            style: "destructive",
+            onPress: () => {
+              logout();
+            }
+          }
+        ]
+      );
     }
   };
 
@@ -88,7 +112,12 @@ const HomeScreen = ({ navigation }) => {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
           <Text style={styles.title}>Attendance App</Text>
-          <Text style={styles.clockText}>{currentTime}</Text>
+          <View style={styles.headerRight}>
+            <Text style={styles.clockText}>{currentTime}</Text>
+            <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+              <MaterialIcons name="logout" size={24} color="#FF3B30" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.card}>
@@ -216,11 +245,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 15,
+  },
   clockText: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#007AFF',
     fontVariant: ['tabular-nums'],
+  },
+  logoutButton: {
+    padding: 5,
   },
   buttonActive: {
     backgroundColor: '#007AFF',
