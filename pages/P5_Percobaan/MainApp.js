@@ -1,9 +1,10 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
+import PropTypes from 'prop-types';
 import { AuthProvider, AuthContext } from './AuthContext';
 
 import LoginScreen from './LoginScreen';
@@ -13,6 +14,12 @@ import DetailScreen from './DetailScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+
+const HomeTabIcon = ({ color }) => <MaterialIcons name="home" size={24} color={color} />;
+HomeTabIcon.propTypes = { color: PropTypes.string.isRequired };
+
+const HistoryTabIcon = ({ color }) => <MaterialIcons name="history" size={24} color={color} />;
+HistoryTabIcon.propTypes = { color: PropTypes.string.isRequired };
 
 function HistoryStack() {
   return (
@@ -39,7 +46,7 @@ function MainTabs() {
         component={HomeScreen}
         options={{
           tabBarLabel: 'Beranda',
-          tabBarIcon: ({ color }) => <MaterialIcons name="home" size={24} color={color} />
+          tabBarIcon: HomeTabIcon
         }}
       />
 
@@ -48,7 +55,7 @@ function MainTabs() {
         component={HistoryStack}
         options={{
           tabBarLabel: 'Riwayat',
-          tabBarIcon: ({ color }) => <MaterialIcons name="history" size={24} color={color} />
+          tabBarIcon: HistoryTabIcon
         }}
       />
     </Tab.Navigator>
