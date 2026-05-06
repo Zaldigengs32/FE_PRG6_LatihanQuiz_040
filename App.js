@@ -1,4 +1,4 @@
-import MainApp from "./pages/P5_Percobaan/MainApp";
+import MainApp from "./pages/LatihanKuis_040/MainApp";
 
 export default function App() {
     return <MainApp />;
