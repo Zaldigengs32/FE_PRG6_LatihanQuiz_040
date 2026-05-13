@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
+import PropTypes from 'prop-types';
 
 const API_URL = 'http://10.1.9.195:8080/api/phonebooks';
 
@@ -89,6 +90,13 @@ export default function ListScreen({ navigation }) {
     </SafeAreaView>
   );
 }
+
+ListScreen.propTypes = {
+  navigation: PropTypes.shape({
+    navigate: PropTypes.func.isRequired,
+    addListener: PropTypes.func.isRequired,
+  }).isRequired,
+};
 
 const styles = StyleSheet.create({
   container: {

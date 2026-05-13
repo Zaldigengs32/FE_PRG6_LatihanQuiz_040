@@ -8,182 +8,214 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
+import PropTypes from 'prop-types';
 import axios from 'axios';
 
-const API_URL = 'http://10.1.9.195:8080/api/phonebooks';
+const API_URL = 'http://10.1.9.195:8080/api/buildings';
 
 export default function DetailScreen({ route, navigation }) {
-  const { contact, mode } = route.params;
-  const isAdd = mode === 'add';
+  const { building } = route.params;
+  const isAdd = !building?.idBuilding;
 
-  const [firstName, setFirstName] = useState(contact?.firstName || '');
-  const [lastName, setLastName] = useState(contact?.lastName || '');
-  const [birthDate, setBirthDate] = useState(contact?.birthDate || '');
-  const [phoneNumber, setPhoneNumber] = useState(contact?.phoneNumber || '');
-  const [status, setStatus] = useState(contact?.status || '');
-  const [address, setAddress] = useState(contact?.address || '');
+  const [buldingName, setBuldingName] = useState(building?.buldingName || '');
+  const [buildingType, setBuildingType] = useState(building?.buildingType || '');
+  const [location, setLocation] = useState(building?.location || '');
+  const [buildingArea, setBuildingArea] = useState(
+    building?.buildingArea ? String(building.buildingArea) : ''
+  );
   const [loading, setLoading] = useState(false);
 
-  const handleAdd = async () => {
-    if (!firstName.trim()) {
-      Alert.alert('Validasi', 'First Name tidak boleh kosong.');
+  const calcPrice = (type, area) => {
+    const a = parseInt(area, 10);
+    if (!a || isNaN(a)) return '';
+    if (type === '1') return String(a * 150000);
+    if (type === '2') return String(a * 180000);
+    return '';
+  };
+
+  const price = building?.price
+    ? String(building.price)
+    : calcPrice(buildingType, buildingArea);
+
+  const handleCreate = async () => {
+    if (!buldingName.trim()) {
+      if (Platform.OS === 'web') {
+        window.alert('Building Name tidak boleh kosong.');
+      } else {
+        Alert.alert('Validasi', 'Building Name tidak boleh kosong.');
+      }
+      return;
+    }
+    if (buildingType !== '1' && buildingType !== '2') {
+      if (Platform.OS === 'web') {
+        window.alert('Building Type harus 1 (Apartment) atau 2 (House).');
+      } else {
+        Alert.alert('Validasi', 'Building Type harus 1 (Apartment) atau 2 (House).');
+      }
       return;
     }
     try {
       setLoading(true);
       await axios.post(API_URL, {
-        firstName,
-        lastName,
-        birthDate,
-        phoneNumber,
-        status,
-        address,
+        buldingName: buldingName.trim(),
+        buildingType,
+        location: location.trim(),
+        buildingArea: buildingArea ? parseInt(buildingArea, 10) : null,
       });
-      Alert.alert('Sukses', 'Data berhasil ditambahkan.', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
+      if (Platform.OS === 'web') {
+        window.alert('Data berhasil ditambahkan.');
+        navigation.goBack();
+      } else {
+        Alert.alert('Sukses', 'Data berhasil ditambahkan.', [
+          { text: 'OK', onPress: () => navigation.goBack() },
+        ]);
+      }
     } catch (err) {
       const msg = err.response?.data?.message || err.message;
-      Alert.alert('Error', 'Gagal menambahkan data: ' + msg);
+      if (Platform.OS === 'web') {
+        window.alert('Gagal menambahkan data: ' + msg);
+      } else {
+        Alert.alert('Error', 'Gagal menambahkan data: ' + msg);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpdate = async () => {
-    if (!firstName.trim()) {
-      Alert.alert('Validasi', 'First Name tidak boleh kosong.');
-      return;
-    }
+  const handleDelete = async () => {
+    const confirmed = Platform.OS === 'web'
+      ? window.confirm(`Yakin ingin menghapus "${buldingName}"?`)
+      : await new Promise((resolve) => {
+          Alert.alert(
+            'Konfirmasi Hapus',
+            `Yakin ingin menghapus "${buldingName}"?`,
+            [
+              { text: 'Batal', style: 'cancel', onPress: () => resolve(false) },
+              { text: 'Hapus', style: 'destructive', onPress: () => resolve(true) },
+            ]
+          );
+        });
+
+    if (!confirmed) return;
+
     try {
       setLoading(true);
-      await axios.put(`${API_URL}/${contact.idContact}`, {
-        firstName,
-        lastName,
-        birthDate,
-        phoneNumber,
-        status,
-        address,
-      });
-      Alert.alert('Sukses', 'Data berhasil diperbarui.', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
+      await axios.delete(`${API_URL}/${building.idBuilding}`);
+      if (Platform.OS === 'web') {
+        window.alert('Data berhasil dihapus.');
+        navigation.goBack();
+      } else {
+        Alert.alert('Sukses', 'Data berhasil dihapus.', [
+          { text: 'OK', onPress: () => navigation.goBack() },
+        ]);
+      }
     } catch (err) {
       const msg = err.response?.data?.message || err.message;
-      Alert.alert('Error', 'Gagal memperbarui data: ' + msg);
+      if (Platform.OS === 'web') {
+        window.alert('Gagal menghapus data: ' + msg);
+      } else {
+        Alert.alert('Error', 'Gagal menghapus data: ' + msg);
+      }
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDelete = () => {
-    Alert.alert(
-      'Konfirmasi Hapus',
-      `Yakin ingin menghapus kontak "${firstName} ${lastName}"?`,
-      [
-        { text: 'Batal', style: 'cancel' },
-        {
-          text: 'Hapus',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setLoading(true);
-              await axios.delete(`${API_URL}/${contact.idContact}`);
-              Alert.alert('Sukses', 'Data berhasil dihapus.', [
-                { text: 'OK', onPress: () => navigation.goBack() },
-              ]);
-            } catch (err) {
-              const msg = err.response?.data?.message || err.message;
-              Alert.alert('Error', 'Gagal menghapus data: ' + msg);
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ]
-    );
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-      <Text style={styles.label}>First Name</Text>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+    >
+      <Text style={styles.label}>Building Name</Text>
       <TextInput
         style={styles.input}
-        value={firstName}
-        onChangeText={setFirstName}
+        value={buldingName}
+        onChangeText={setBuldingName}
       />
 
-      <Text style={styles.label}>Last Name</Text>
+      <Text style={styles.label}>Building Type</Text>
       <TextInput
         style={styles.input}
-        value={lastName}
-        onChangeText={setLastName}
-      />
-
-      <Text style={styles.label}>Birth Date</Text>
-      <TextInput
-        style={styles.input}
-        value={birthDate}
-        onChangeText={setBirthDate}
-        placeholder="yyyy-mm-dd"
-        placeholderTextColor="#bbb"
-      />
-
-      <Text style={styles.label}>Phone Number</Text>
-      <TextInput
-        style={styles.input}
-        value={phoneNumber}
-        onChangeText={(text) => {
-          const digitsOnly = text.replace(/[^0-9]/g, '');
-          setPhoneNumber(digitsOnly);
-        }}
-        placeholder="Only Number"
-        placeholderTextColor="#bbb"
-        keyboardType="number-pad"
-      />
-
-      <Text style={styles.label}>Status</Text>
-      <TextInput
-        style={styles.input}
-        value={status}
+        value={buildingType}
         onChangeText={(text) => {
           if (text === '' || text === '1' || text === '2') {
-            setStatus(text);
+            setBuildingType(text);
           }
         }}
         keyboardType="number-pad"
         maxLength={1}
-        placeholder="1 = Married, 2 = Single"
-        placeholderTextColor="#bbb"
       />
 
-      <Text style={styles.label}>Address</Text>
+      <Text style={styles.label}>Location</Text>
       <TextInput
         style={styles.input}
-        value={address}
-        onChangeText={setAddress}
+        value={location}
+        onChangeText={setLocation}
       />
 
-      {loading && <ActivityIndicator size="small" color="#0056A0" style={{ marginVertical: 8 }} />}
+      <Text style={styles.label}>Building Area</Text>
+      <TextInput
+        style={styles.input}
+        value={buildingArea}
+        onChangeText={(text) => setBuildingArea(text.replace(/[^0-9]/g, ''))}
+        keyboardType="number-pad"
+      />
 
-      {isAdd ? (
-        <TouchableOpacity style={styles.addBtn} onPress={handleAdd} disabled={loading}>
-          <Text style={styles.addBtnText}>+ Add Data</Text>
-        </TouchableOpacity>
-      ) : (
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.updateBtn} onPress={handleUpdate} disabled={loading}>
-            <Text style={styles.actionBtnText}>Update</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.deleteBtn} onPress={handleDelete} disabled={loading}>
-            <Text style={styles.actionBtnText}>Delete</Text>
-          </TouchableOpacity>
-        </View>
+      <Text style={styles.label}>Price</Text>
+      <TextInput
+        style={[styles.input, styles.inputDisabled]}
+        value={price}
+        editable={false}
+      />
+
+      {loading && (
+        <ActivityIndicator
+          size="small"
+          color="#333"
+          style={{ marginVertical: 8 }}
+        />
       )}
+
+      <View style={styles.actionRow}>
+        <TouchableOpacity
+          style={styles.addBtn}
+          onPress={handleCreate}
+          disabled={loading}
+        >
+          <Text style={styles.btnText}>+ Add Data</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.deleteBtn, isAdd && styles.btnDisabled]}
+          onPress={handleDelete}
+          disabled={loading || isAdd}
+        >
+          <Text style={styles.btnText}>Delete</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
+
+DetailScreen.propTypes = {
+  route: PropTypes.shape({
+    params: PropTypes.shape({
+      building: PropTypes.shape({
+        idBuilding: PropTypes.number,
+        buldingName: PropTypes.string,
+        buildingType: PropTypes.string,
+        location: PropTypes.string,
+        buildingArea: PropTypes.number,
+        price: PropTypes.number,
+      }),
+    }).isRequired,
+  }).isRequired,
+  navigation: PropTypes.shape({
+    goBack: PropTypes.func.isRequired,
+  }).isRequired,
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -194,54 +226,53 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#222',
+    color: '#000000',
     marginBottom: 4,
-    marginTop: 12,
+    marginTop: 14,
   },
   input: {
-    backgroundColor: '#F0F0F0',
-    borderRadius: 8,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 6,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 14,
     color: '#333',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#ccc',
   },
-  addBtn: {
-    marginTop: 28,
-    backgroundColor: '#87CEEB',
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  addBtnText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 15,
+  inputDisabled: {
+    backgroundColor: '#ebebeb',
+    color: '#aaa',
   },
   actionRow: {
     flexDirection: 'row',
     marginTop: 28,
     gap: 12,
   },
-  updateBtn: {
+  addBtn: {
     flex: 1,
-    backgroundColor: '#F5A623',
-    borderRadius: 8,
-    paddingVertical: 14,
+    borderRadius: 6,
+    paddingVertical: 13,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#5BA4CF',
+    backgroundColor: '#5BA4CF',
   },
   deleteBtn: {
     flex: 1,
-    backgroundColor: '#E74C3C',
-    borderRadius: 8,
-    paddingVertical: 14,
+    borderRadius: 6,
+    paddingVertical: 13,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E74C3C',
+    backgroundColor: '#E74C3C',
   },
-  actionBtnText: {
+  btnDisabled: {
+    opacity: 0.3,
+  },
+  btnText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 15,
+    fontSize: 14,
   },
 });
